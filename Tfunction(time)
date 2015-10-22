@@ -1,0 +1,15 @@
+%deltatime is time after 5 am;
+function res = Tfunction(deltatime)
+Thigh = 14.44;
+Tlow = 0;
+timehigh = 15;
+timelow = 5;
+if deltatime<10
+    Tslope = (-14.44)/(-10);
+    res = Tslope*deltatime+Tlow;
+else
+    Tslope = (Thigh-Tlow)/(-14);
+    deltatime = deltatime-10;
+    res = Tslope*deltatime+Tlow+15;
+end
+end
