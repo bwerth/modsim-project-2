@@ -1,0 +1,39 @@
+%specific heat = [water concrete_stone sandstone earth_dry brick_hard] 
+
+%Assumptions made:
+    %Square “footage” = 100 square meters
+    %thickness of thermal mass = 0.1016 meters
+
+deltaT = temperature_room - temperature_thermalmass;
+    
+area = 100; %square meters
+area_gain = 100/6;
+area_loss = 100;
+mass= density*volume;
+%specific heat = [water concrete_stone sandstone earth_dry brick_hard] 
+%http://www.engineeringtoolbox.com/specific-heat-solids-d_154.html except
+%for water and adobe
+%adobe has same specific heat as concrete
+spec_heat=[4.186 0.75 0.92 1.26 1];          %j/(g*C)
+C=mass*spec_heat;
+Q=C*deltaT;     %C= thermal mass %J/s
+
+
+Q_conductivity_gain = (thermal_conductivity*area_gain/thickness)*deltaT;
+Q_conductivity_loss = (thermal_conductivity*area_loss/thickness)*deltaT; 
+
+energy(1) = temperature_to_energy(25.0010, mass, spec_heat(2))
+energy(t) = energy(t-1)+ Q_conductivity_gain + Q_conductivity_loss
+
+
+function res = energy_to_temperature (U, mass_of_thermalmass, spec_heat_of_thermalmass)
+res = U / heatCapacity(mass_of_thermalmass,spec_heat_of_thermalmass);
+end
+
+function res = temperature_to_energy(T, mass_of_thermalmass, spec_heat_of_thermalmass)
+res = T*heatCapacity(mass_of_thermalmass,spec_heat_of_thermalmass);
+end
+
+function res = heatCapacity(mass_of_thermalmass, spec_heat_of_thermalmass)
+res = mass_of_thermalmass*spec_heat_of_thermalmass;
+end
