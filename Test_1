@@ -1,0 +1,104 @@
+%Assumptions made:
+    %Square “footage” = 100 square meters
+    %thickness of thermal mass = 0.1016 meters
+function res = thermalmass_temperature()
+%%
+volume = 100*0.1016; %meters cubed
+spec_heat=[0.75 0.92 1.26 1 2.9]'; %specific heat = [concrete_stone sandstone earth_dry brick_hard balsa_wood] 
+density = [1600 2323 1601.85 2002.31]' ; %kg/m^3
+thermal_conductivity = [0.0062    0.0062    0.0055    0.0048]'; %W/(m*degC)
+%area = 100; %square meters
+area_gain = 100/6;
+area_loss = 100;
+thickness = .1016; %meters
+
+boltzmann_k = 5.0772e-26;
+
+params(1) = area_gain;
+params(2) = area_loss;
+params(3) = thickness;
+%params(4) = thermal_conductivity;
+%params(5) = mass_of_thermalmass;
+energy = zeros(4,1);
+seconds = [0 86400];
+dt = 60;
+timesteps = seconds/dt;
+
+%4.5 kWh per square meters
+
+options = [];
+%%
+Ts = cell(1,4);
+Ys = cell(1,4);
+    for j = 1:4
+        Mass_of_thermalmass = density(j)*volume;
+    
+        energy(j) = 0*Mass_of_thermalmass*spec_heat(j);
+    
+        params(6) = spec_heat(j);
+        params(5) = Mass_of_thermalmass;
+        params(4) = thermal_conductivity(j);
+
+        [T,Y] = ode45(@conduction,[0 86400],temperature_to_energy_air(0,boltzmann_k),options);
+        Ts{j} = T;
+        Ys{j} = Y;
+        
+    end
+    
+    function res = conduction(t,stock)
+        
+        area_gain = params(1);
+        area_loss = params(2);
+        thickness = params(3);
+        Thermal_conductivity = params(4);
+        Mass_of_thermalmass = params(5);
+        %spec_heat = params(6);
+        hours = t/3600;
+        temperature_room = Tfunction(hours);
+        temperature_thermalmass = stock./(Mass_of_thermalmass*spec_heat);
+        deltaT = temperature_room - energy_to_temperature(thermalmass_temperature,Mass_of_thermalmass, spec_heat);
+
+
+       
+        
+        Q_conductivity_loss = (Thermal_conductivity*area_loss/thickness)*deltaT;
+        
+        res = Q_conductivity_loss;
+    end
+
+
+
+
+Mass_of_thermalmass = density*volume;
+
+
+hold on;
+
+plot(Ts{1}/3600, energy_to_temperature_air(Ys{1}, boltzmann_k),'r');
+plot(Ts{2}/3600, energy_to_temperature_air(Ys{2}, boltzmann_k),'b');
+plot(Ts{3}/3600, energy_to_temperature_air(Ys{3}, boltzmann_k),'g');
+plot(Ts{4}/3600, energy_to_temperature_air(Ys{4}, boltzmann_k),'m');
+res = Ys;
+xlabel('Time after 5AM (hours)')
+ylabel('Temeperature of thermal mass (celcius)')
+end
+function res = energy_to_temperature_air (energy, boltzmann_k)
+res = (2/3).*energy./boltzmann_k;
+end
+
+function res = temperature_to_energy_air(T, boltzmann_k)
+res = T.*boltzmann_k*(3/2);
+end
+
+function res = energy_to_temperature (energy, mass_of_thermalmass, spec_heat)
+res = energy./heatCapacity(mass_of_thermalmass,spec_heat)';
+end
+
+
+function res = temperature_to_energy(T, mass_of_thermalmass, spec_heat)
+res = T.*heatCapacity(mass_of_thermalmass,spec_heat);
+end
+
+function res = heatCapacity(mass_of_thermalmass, spec_heat)
+res = mass_of_thermalmass.*spec_heat;
+end
